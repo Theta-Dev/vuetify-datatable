@@ -20,7 +20,6 @@ export default {
 
   methods: {
     getSearchable(val) {
-      // return null;
       return val.toLowerCase();
     },
     getFilterable(val) {

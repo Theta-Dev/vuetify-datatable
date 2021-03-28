@@ -3,11 +3,11 @@
     <template v-slot:default>
       <thead>
       <tr>
-        <td
+        <th
           v-for="name in Object.keys(fields)"
           :key="name"
         >{{ name }}
-        </td>
+        </th>
       </tr>
       </thead>
       <tbody>
@@ -54,7 +54,7 @@ export default {
       ],
       [
         ['Max'],
-        ['Fix: API error', 'blabla', 'more blabla'],
+        ['Fix: API error'],
       ],
     ],
     filter: [[], []],
@@ -66,23 +66,43 @@ export default {
       return this.data.map((it) => it.map((fl) => fl.length).reduce((a, b) => Math.max(a, b)));
     },
     searchables() {
-      return this.data.map((it) => it.map((fl, i) => fl.map(
-        (flt) => {
+      return this.data.map((it) => it.map((fl, i) => fl.reduce(
+        (result, flt) => {
           const field = this.fields[Object.keys(this.fields)[i]];
 
-          if(!field.methods.getSearchable) return null;
-          return field.methods.getSearchable(flt);
-        },
+          if(!field.methods.getSearchable) return result;
+          const res = field.methods.getSearchable(flt);
+          if(res) result.push(res);
+          return result;
+        }, [],
       )));
     },
     filterables() {
-      return this.data.map((it) => it.map((fl, i) => fl.map(
-        (flt) => this.fields[Object.keys(this.fields)[i]].methods.getFilterable(flt),
+      return this.data.map((it) => it.map((fl, i) => fl.reduce(
+        (result, flt) => {
+          const field = this.fields[Object.keys(this.fields)[i]];
+
+          if(!field.methods.getFilterable) return result;
+          const res = field.methods.getFilterable(flt);
+          if(res) result.push(res);
+          return result;
+        }, [],
       )));
     },
-    /* filterLists() {
+    filterLists() {
+      const filterLists = [];
 
-    }, */
+      this.filterables.forEach((itm) => {
+        itm.forEach((col, i) => {
+          col.forEach((citm) => {
+            if(!Array.isArray(filterLists[i])) filterLists[i] = [];
+            if(!filterLists[i].includes(citm)) filterLists[i].push(citm);
+          });
+        });
+      });
+
+      return filterLists;
+    },
     visibleItems() {
       return this.data.map((it, i) => {
         // Does search match
@@ -90,32 +110,49 @@ export default {
           // Go through all fields of item
           // At least one searchable has to match
           const searchMatched = this.searchables[i].some(
-            (fl) => fl.some((fli) => fli.includes(this.search)),
+            (fl) => {
+              if(!Array.isArray(fl) || fl.length === 0) return true;
+              return fl.some((fli) => fli.includes(this.search));
+            },
           );
           if(!searchMatched) return false;
         }
 
         // Does filter match
         return this.filterables[i].every(
-          (fl) => fl.some((fli, ci) => {
-            if(!Array.isArray(this.filter[ci]) || this.filter[ci].length === 0) return true;
-            return this.filter[ci].includes(fli);
-          }),
+          (fl) => {
+            if(!Array.isArray(fl) || fl.length === 0) return true;
+            return fl.some((fli, ci) => {
+              if(!Array.isArray(this.filter[ci]) || this.filter[ci].length === 0) return true;
+              return this.filter[ci].includes(fli);
+            });
+          },
         );
       });
     },
   },
 
-  methods: {
-  },
+  methods: {},
 
   mounted() {
     // console.log(this.fields);
-    // console.log(this.visibleItems);
+    console.log(this.filterLists);
   },
 };
 </script>
 
 <style scoped>
+.theme--light.v-data-table > .v-data-table__wrapper > table > tbody >
+tr > td:not(.v-data-table__mobile-row),
+.theme--light.v-data-table > .v-data-table__wrapper > table > tbody >
+tr:not(:last-child) > th:not(.v-data-table__mobile-row) {
+  border-bottom: thin solid rgba(0, 0, 0, 0.12);
+}
 
+.theme--dark.v-data-table > .v-data-table__wrapper > table > tbody >
+tr > td:not(.v-data-table__mobile-row),
+.theme--dark.v-data-table >  .v-data-table__wrapper > table > tbody >
+tr > th:not(.v-data-table__mobile-row) {
+  border-bottom: thin solid rgba(255, 255, 255, 0.12);
+}
 </style>
