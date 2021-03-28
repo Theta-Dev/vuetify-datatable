@@ -31,7 +31,7 @@ const structure = [
         '<custom-template />',
         // Literal function
         (data) => data.value + '%'),
-    new TableFieldCustom('Status',
+    new TableField('Status',
         // Custom template
         '<custom-template />'),
 ]
@@ -63,10 +63,33 @@ const data = [
 ```
 
 ### TableField
-TableFields define the structure of the table and take care of
-the following functions:
+TableFields define the structure of the table. This is the base class, from which
+more specialized fields can be derived.
 
-- get template for table cell rendering
-- get template for tooltip rendering
-- get filter data
-- check if the field matches a filter/search string
+**Props:**
+- searchable: Search/filterable string
+- filter: Array of enabled filters from the respective column
+- search: String from search bar
+
+**Data:**
+- searchMatched (computed): does search/filters apply to this field?
+
+The template of the TableField has to be rendered inside the cell.
+
+
+### TableFieldText
+TableField for plain text.
+
+**Props:**
+- name: Column name
+- val: Text
+- filter + search (see above)
+
+
+### TableFieldIcon
+Table field showing an icon with optional tooltip.
+
+**Props:**
+- val: Icon key
+- icons: Object with icons, colors, searchables and tooltips by icon key
+- filter + search (see above)

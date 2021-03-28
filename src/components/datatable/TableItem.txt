@@ -1,0 +1,47 @@
+<template>
+  <tbody v-show="isVisible">
+    <tr
+      v-for="n in numRows"
+      :key="n"
+    >
+      <template
+        v-for="(field, name, i) in fields"
+      >
+        <component
+          v-if="i <= itemdata[i].length"
+          :key="name"
+          :is="field"
+          :val="itemdata[i][n]"
+          :filter="filter"
+          :search="search"
+        />
+      </template>
+    </tr>
+  </tbody>
+</template>
+
+<script>
+export default {
+  name: 'TableItem',
+
+  props: {
+    fields: Array,
+    itemdata: Array,
+    filter: Array,
+    search: String,
+  },
+
+  computed: {
+    isVisible() {
+      return true;
+    },
+    numRows() {
+      return 2;
+    },
+  },
+};
+</script>
+
+<style scoped>
+
+</style>
