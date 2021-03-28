@@ -206,15 +206,20 @@ export default {
       return this.data.map((item, i_item) => {
         // Does search match
         if(this.search) {
-          const search = this.search.toLowerCase();
+          // Split search input to get individual words, lowercase them
+          // for casse insensitivity and filter out empty words
+          const searchWords = this.search.toLowerCase().split(' ').filter(
+            (word) => word.trim(),
+          );
+          // Go through all search words
           // Go through all fields of item
-          // At least one searchable has to match
-          const searchMatched = this.searchables[i_item].some(
+          // At least one searchable has to match one search word
+          const searchMatched = searchWords.some((word) => this.searchables[i_item].some(
             (col) => {
               if(!Array.isArray(col) || col.length === 0) return false;
-              return col.some((entry) => entry.includes(search));
+              return col.some((entry) => entry.includes(word));
             },
-          );
+          ));
           if(!searchMatched) return false;
         }
 
