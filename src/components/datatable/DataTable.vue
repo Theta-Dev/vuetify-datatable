@@ -42,7 +42,7 @@
                         <v-icon>mdi-filter</v-icon>
                       </v-btn>
                     </template>
-                    <v-list>
+                    <v-list dense>
                       <v-list-item-group
                         v-model="filter_selections[i]"
                         multiple
@@ -72,7 +72,9 @@
                         <v-list-item
                           color="red"
                           @click="clearFilter(i)"
-                        >Clear filter</v-list-item>
+                        >
+                          <v-list-item-title>Clear filter</v-list-item-title>
+                        </v-list-item>
                       </v-list-item-group>
                     </v-list>
                   </v-menu>
@@ -98,7 +100,7 @@
                 :is="field"
                 :rspan="(numItemRows[index] - item[fi].length) === 0 ? 1 : numItemRows[index]"
                 :val="item[fi][i]"
-                :filter="filter"
+                :filter="filters"
                 :search="search"
               />
             </template>
@@ -136,80 +138,88 @@ export default {
   }),
 
   computed: {
+    // The amount of rows occupied by each table item, [i_item] => num_rows
     numItemRows() {
       return this.data.map((it) => it.map((fl) => fl.length).reduce((a, b) => Math.max(a, b)));
     },
+    // Walk through the data object and obtain the searchable string for each value
+    // [i_item] => [i_col] => [i_entry] => searchable
     searchables() {
-      return this.data.map((it) => it.map((fl, i) => fl.reduce(
-        (result, flt) => {
-          const field = this.fields[Object.keys(this.fields)[i]];
+      return this.data.map((item) => item.map((col, i_col) => col.reduce(
+        (result, entry) => {
+          const field = this.fields[Object.keys(this.fields)[i_col]];
 
           if(!field.methods.getSearchable) return result;
-          const res = field.methods.getSearchable(flt);
+          const res = field.methods.getSearchable(entry);
           if(res) result.push(res);
           return result;
         }, [],
       )));
     },
+    // Walk through the data object and obtain the filterable string for each value
+    // [i_item] => [i_col] => [i_entry] => filterable
     filterables() {
-      return this.data.map((it) => it.map((fl, i) => fl.reduce(
-        (result, flt) => {
-          const field = this.fields[Object.keys(this.fields)[i]];
+      return this.data.map((item) => item.map((col, i_col) => col.reduce(
+        (result, entry) => {
+          const field = this.fields[Object.keys(this.fields)[i_col]];
 
           if(!field.methods.getFilterable) return result;
-          const res = field.methods.getFilterable(flt);
+          const res = field.methods.getFilterable(entry);
           if(res) result.push(res);
           return result;
         }, [],
       )));
     },
+    // Accumulate filterables for all columns to be shown in the filter menus
+    // [i_col] => filterable[]
     filterLists() {
       const filterLists = [];
 
-      this.filterables.forEach((itm) => {
-        itm.forEach((col, i) => {
-          col.forEach((citm) => {
-            if(!Array.isArray(filterLists[i])) filterLists[i] = [];
-            if(!filterLists[i].includes(citm)) filterLists[i].push(citm);
+      this.filterables.forEach((item) => {
+        item.forEach((col, i_col) => {
+          col.forEach((filterable) => {
+            if(!Array.isArray(filterLists[i_col])) filterLists[i_col] = [];
+            if(!filterLists[i_col].includes(filterable)) filterLists[i_col].push(filterable);
           });
         });
       });
 
       return filterLists;
     },
-    filter() {
-      return this.filter_selections.map((selection, column) => selection.map(
-        (itm) => this.filterLists[column][itm],
+    // Selected filters for each column
+    // [i_col] => filterable[] (selected)
+    filters() {
+      return this.filter_selections.map((selection, col) => selection.map(
+        (i_sel) => this.filterLists[col][i_sel],
       ));
     },
+    // Visibility state of each item (not sorted out by filter/search)
+    // [i_itm] => visible (bool)
     visibleItems() {
-      return this.data.map((it, i) => {
+      return this.data.map((item, i_item) => {
         // Does search match
         if(this.search) {
           const search = this.search.toLowerCase();
           // Go through all fields of item
           // At least one searchable has to match
-          const searchMatched = this.searchables[i].some(
-            (fl) => {
-              if(!Array.isArray(fl) || fl.length === 0) return true;
-              return fl.some((fli) => fli.includes(search));
+          const searchMatched = this.searchables[i_item].some(
+            (col) => {
+              if(!Array.isArray(col) || col.length === 0) return true;
+              return col.some((entry) => entry.includes(search));
             },
           );
           if(!searchMatched) return false;
         }
 
         // Does filter match
-        console.log('Filterables', i, this.filterables[i]);
-
-        return this.filterables[i].every(
-          (fl, ci) => {
-            console.log('fl', fl);
-            console.log('Filter', this.filter[ci]);
-            if(!Array.isArray(fl) || fl.length === 0) return true;
-            return fl.some((fli) => {
-              console.log('fli', ci, fli);
-              if(!Array.isArray(this.filter[ci]) || this.filter[ci].length === 0) return true;
-              return this.filter[ci].includes(fli);
+        return this.filterables[i_item].every(
+          (col, i_col) => {
+            if(!Array.isArray(col) || col.length === 0) return true;
+            return col.some((entry) => {
+              if(!Array.isArray(this.filters[i_col]) || this.filters[i_col].length === 0) {
+                return true;
+              }
+              return this.filters[i_col].includes(entry);
             });
           },
         );
@@ -218,21 +228,19 @@ export default {
   },
 
   methods: {
-    isFilterActive(i) {
-      return Array.isArray(this.filter[i]) && this.filter[i].length > 0;
+    // Is filter of certain column active
+    isFilterActive(i_col) {
+      return Array.isArray(this.filters[i_col]) && this.filters[i_col].length > 0;
     },
-    getFilterButtonColor(i, hover) {
-      if(this.isFilterActive(i)) return 'primary';
+    // Get the color of the filter button
+    getFilterButtonColor(i_col, hover) {
+      if(this.isFilterActive(i_col)) return 'primary';
       return hover ? '' : 'transparent';
     },
-    clearFilter(i) {
-      this.$set(this.filter_selections, i, []);
+    // Remove the filter from a certain column
+    clearFilter(i_col) {
+      this.$set(this.filter_selections, i_col, []);
     },
-  },
-
-  mounted() {
-    // console.log(this.fields);
-    // console.log(this.filterLists);
   },
 };
 </script>
