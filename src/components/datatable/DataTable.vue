@@ -26,7 +26,10 @@
                 <v-col>
                   {{ name }}
                 </v-col>
-                <v-col class="text-right">
+                <v-col
+                  v-if="isFilterAvailable(i)"
+                  class="text-right"
+                >
                   <v-menu
                     v-model="filter_menus[i]"
                     offset-y
@@ -114,6 +117,7 @@
 
 <script>
 import TableFieldText from '@/components/datatable/TableFieldText.vue';
+import TableFieldDummy from '@/components/datatable/TableFieldDummy.vue';
 
 export default {
   name: 'DataTable',
@@ -121,15 +125,18 @@ export default {
     fields: {
       Name: TableFieldText,
       Task: TableFieldText,
+      Dummy: TableFieldDummy,
     },
     data: [
       [
         ['ThetaDev'],
         ['Feature: User registration', 'Documentation'],
+        ['d1'],
       ],
       [
         ['Max'],
         ['Fix: API error'],
+        ['d2'],
       ],
     ],
     filter_menus: [],
@@ -149,7 +156,7 @@ export default {
         (result, entry) => {
           const field = this.fields[Object.keys(this.fields)[i_col]];
 
-          if(!field.methods.getSearchable) return result;
+          if(!('methods' in field) || !('getSearchable' in field.methods)) return result;
           const res = field.methods.getSearchable(entry);
           if(res) result.push(res);
           return result;
@@ -163,7 +170,7 @@ export default {
         (result, entry) => {
           const field = this.fields[Object.keys(this.fields)[i_col]];
 
-          if(!field.methods.getFilterable) return result;
+          if(!('methods' in field) || !('getFilterable' in field.methods)) return result;
           const res = field.methods.getFilterable(entry);
           if(res) result.push(res);
           return result;
@@ -204,7 +211,7 @@ export default {
           // At least one searchable has to match
           const searchMatched = this.searchables[i_item].some(
             (col) => {
-              if(!Array.isArray(col) || col.length === 0) return true;
+              if(!Array.isArray(col) || col.length === 0) return false;
               return col.some((entry) => entry.includes(search));
             },
           );
@@ -228,6 +235,10 @@ export default {
   },
 
   methods: {
+    // Can this column be filtered?
+    isFilterAvailable(i_col) {
+      return Array.isArray(this.filterLists[i_col]) && this.filterLists[i_col].length > 0;
+    },
     // Is filter of certain column active
     isFilterActive(i_col) {
       return Array.isArray(this.filters[i_col]) && this.filters[i_col].length > 0;

@@ -2,7 +2,7 @@
   <TableField
     :rspan="rspan"
   >
-    {{ val }}
+    I'm a dummy: {{ val }}
   </TableField>
 </template>
 
@@ -10,21 +10,12 @@
 import TableField from '@/components/datatable/TableField.vue';
 
 export default {
-  name: 'TableFieldText',
+  name: 'TableFieldDummy',
   components: { TableField },
 
   props: {
     rspan: Number,
     val: String,
-  },
-
-  methods: {
-    getSearchable(val) {
-      return val.toLowerCase();
-    },
-    getFilterable(val) {
-      return val;
-    },
   },
 };
 </script>
