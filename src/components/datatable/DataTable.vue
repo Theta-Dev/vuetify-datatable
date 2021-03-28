@@ -27,9 +27,55 @@
                   {{ name }}
                 </v-col>
                 <v-col class="text-right">
-                  <v-btn icon :color="getFilterButtonColor(i, hover)">
-                    <v-icon>mdi-filter</v-icon>
-                  </v-btn>
+                  <v-menu
+                    v-model="filter_menus[i]"
+                    offset-y
+                    :close-on-content-click="false"
+                  >
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        :color="getFilterButtonColor(i, hover || filter_menus[i])"
+                        v-on="on"
+                        v-bind="attrs"
+                      >
+                        <v-icon>mdi-filter</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list>
+                      <v-list-item-group
+                        v-model="filter_selections[i]"
+                        multiple
+                      >
+                        <v-list-item
+                          v-for="item in filterLists[i]"
+                          :key="item"
+                        >
+                          <template v-slot:default="{ active }">
+                            <v-list-item-content>
+                              <v-list-item-title>{{ item }}</v-list-item-title>
+                            </v-list-item-content>
+
+                            <v-list-item-action>
+                              <v-checkbox
+                                :input-value="active"
+                                color="primary"
+                              ></v-checkbox>
+                            </v-list-item-action>
+                          </template>
+                        </v-list-item>
+                      </v-list-item-group>
+                      <v-list-item-group
+                        v-show="isFilterActive(i)"
+                        mandatory
+                      >
+                        <v-list-item
+                          color="red"
+                          @click="clearFilter(i)"
+                        >Clear filter</v-list-item>
+                      </v-list-item-group>
+                    </v-list>
+                  </v-menu>
                 </v-col>
               </v-row>
             </v-hover>
@@ -84,7 +130,8 @@ export default {
         ['Fix: API error'],
       ],
     ],
-    filter: [],
+    filter_menus: [],
+    filter_selections: [],
     search: '',
   }),
 
@@ -130,6 +177,11 @@ export default {
 
       return filterLists;
     },
+    filter() {
+      return this.filter_selections.map((selection, column) => selection.map(
+        (itm) => this.filterLists[column][itm],
+      ));
+    },
     visibleItems() {
       return this.data.map((it, i) => {
         // Does search match
@@ -147,10 +199,15 @@ export default {
         }
 
         // Does filter match
+        console.log('Filterables', i, this.filterables[i]);
+
         return this.filterables[i].every(
-          (fl) => {
+          (fl, ci) => {
+            console.log('fl', fl);
+            console.log('Filter', this.filter[ci]);
             if(!Array.isArray(fl) || fl.length === 0) return true;
-            return fl.some((fli, ci) => {
+            return fl.some((fli) => {
+              console.log('fli', ci, fli);
               if(!Array.isArray(this.filter[ci]) || this.filter[ci].length === 0) return true;
               return this.filter[ci].includes(fli);
             });
@@ -161,9 +218,15 @@ export default {
   },
 
   methods: {
+    isFilterActive(i) {
+      return Array.isArray(this.filter[i]) && this.filter[i].length > 0;
+    },
     getFilterButtonColor(i, hover) {
-      if(Array.isArray(this.filter[i]) && this.filter[i].length > 0) return 'primary';
+      if(this.isFilterActive(i)) return 'primary';
       return hover ? '' : 'transparent';
+    },
+    clearFilter(i) {
+      this.$set(this.filter_selections, i, []);
     },
   },
 
