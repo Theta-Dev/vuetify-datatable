@@ -1,17 +1,45 @@
 <template>
   <v-container>
-    <DataTable />
+    <DataTable
+      title="DataTable Demo"
+      :fields="tableFields"
+      :data="tableData"
+    />
   </v-container>
 </template>
 
 <script>
 import DataTable from '@/components/datatable/DataTable.vue';
 
+import TableFieldText from '@/components/datatable/TableFieldText.vue';
+import TableFieldDummy from '@/components/datatable/TableFieldDummy.vue';
+import TableFieldIcon from '@/components/datatable/TableFieldIcon.vue';
+
 export default {
   name: 'HelloWorld',
   components: { DataTable },
 
   data: () => ({
+    tableFields: {
+      Name: TableFieldText,
+      Task: TableFieldText,
+      Dummy: TableFieldDummy,
+      Icon: TableFieldIcon,
+    },
+    tableData: [
+      [
+        ['ThetaDev'],
+        ['Feature: User registration', 'Documentation'],
+        ['d1'],
+        [0],
+      ],
+      [
+        ['Max'],
+        ['Fix: API error'],
+        ['d2'],
+        [1],
+      ],
+    ],
   }),
 };
 </script>

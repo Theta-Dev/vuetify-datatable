@@ -1,9 +1,9 @@
 <template>
   <v-card>
-    <v-card-title>
-      DataTable
+    <v-card-title v-if="title">
+      {{ title }}
     </v-card-title>
-    <v-card-text>
+    <v-card-text class="pt-1">
       <v-text-field
         v-model="search"
         label="Search..."
@@ -116,29 +116,17 @@
 </template>
 
 <script>
-import TableFieldText from '@/components/datatable/TableFieldText.vue';
-import TableFieldDummy from '@/components/datatable/TableFieldDummy.vue';
 
 export default {
   name: 'DataTable',
+
+  props: {
+    fields: Object,
+    data: Array,
+    title: String,
+  },
+
   data: () => ({
-    fields: {
-      Name: TableFieldText,
-      Task: TableFieldText,
-      Dummy: TableFieldDummy,
-    },
-    data: [
-      [
-        ['ThetaDev'],
-        ['Feature: User registration', 'Documentation'],
-        ['d1'],
-      ],
-      [
-        ['Max'],
-        ['Fix: API error'],
-        ['d2'],
-      ],
-    ],
     filter_menus: [],
     filter_selections: [],
     search: '',
@@ -158,7 +146,7 @@ export default {
 
           if(!('methods' in field) || !('getSearchable' in field.methods)) return result;
           const res = field.methods.getSearchable(entry);
-          if(res) result.push(res);
+          result.push(res);
           return result;
         }, [],
       )));
@@ -172,7 +160,7 @@ export default {
 
           if(!('methods' in field) || !('getFilterable' in field.methods)) return result;
           const res = field.methods.getFilterable(entry);
-          if(res) result.push(res);
+          result.push(res);
           return result;
         }, [],
       )));
@@ -186,7 +174,9 @@ export default {
         item.forEach((col, i_col) => {
           col.forEach((filterable) => {
             if(!Array.isArray(filterLists[i_col])) filterLists[i_col] = [];
-            if(!filterLists[i_col].includes(filterable)) filterLists[i_col].push(filterable);
+            if(filterable !== '' && filterable !== null && !filterLists[i_col].includes(filterable)) {
+              filterLists[i_col].push(filterable);
+            }
           });
         });
       });
