@@ -194,6 +194,7 @@ export default {
         });
       });
 
+      filterLists.forEach((list, i_col) => list.sort(this.getSortFuction(i_col)));
       return filterLists;
     },
     // Selected filters for each column
@@ -243,6 +244,11 @@ export default {
   },
 
   methods: {
+    getSortFuction(i_col) {
+      const field = this.fields[Object.keys(this.fields)[i_col]];
+      if(!('methods' in field) || !('sortFunction' in field.methods)) return undefined;
+      return field.methods.sortFunction;
+    },
     // Can this column be filtered?
     isFilterAvailable(i_col) {
       return Array.isArray(this.filterLists[i_col]) && this.filterLists[i_col].length > 0;
