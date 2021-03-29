@@ -147,9 +147,9 @@ export default {
     // Search field input
     search: '',
     // Sorting direction: true^=A-Z, false^=Z-a
-    sort_dir: false,
+    sort_dir: true,
     // Column to be sorted
-    sort_col: 4,
+    sort_col: 0,
   }),
 
   computed: {
