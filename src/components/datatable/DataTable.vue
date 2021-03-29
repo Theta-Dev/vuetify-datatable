@@ -7,7 +7,7 @@
       <v-text-field
         v-model="search"
         label="Search..."
-        prepend-icon="mdi-magnify"
+        :prepend-icon="icons.search"
         clearable
         hide-details
         single-line
@@ -116,6 +116,7 @@
 </template>
 
 <script>
+import { mdiMagnify } from "@mdi/js";
 
 export default {
   name: 'DataTable',
@@ -127,6 +128,9 @@ export default {
   },
 
   data: () => ({
+    icons: {
+      search: mdiMagnify,
+    },
     filter_menus: [],
     filter_selections: [],
     search: '',
