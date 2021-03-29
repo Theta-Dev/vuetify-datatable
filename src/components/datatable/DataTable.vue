@@ -88,21 +88,21 @@
         </tr>
         </thead>
         <tbody>
-        <template v-for="(item, index) in data">
+        <template v-for="(item, i_item) in data">
           <tr
-            v-for="(n, i) in numItemRows[index]"
-            :key="index + '.' + i"
-            v-show="visibleItems[index]"
+            v-for="(n, i_itrow) in numItemRows[i_item]"
+            :key="i_item + '.' + i_itrow"
+            v-show="visibleItems[i_item]"
           >
             <template
-              v-for="(field, fname, fi) in fields"
+              v-for="(col, i_col) in item"
             >
               <component
-                v-if="(numItemRows[index] - item[fi].length) === 0 || i===0"
-                :key="fname"
-                :is="field"
-                :rspan="(numItemRows[index] - item[fi].length) === 0 ? 1 : numItemRows[index]"
-                :val="item[fi][i]"
+                v-if="(numItemRows[i_item] - col.length) === 0 || i_itrow===0"
+                :key="i_col"
+                :is="fields[Object.keys(fields)[i_col]]"
+                :rspan="(numItemRows[i_item] - col.length) === 0 ? 1 : numItemRows[i_item]"
+                :val="col[i_itrow]"
                 :filter="filters"
                 :search="search"
               />
