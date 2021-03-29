@@ -24,7 +24,10 @@
             <v-hover v-slot="{ hover }">
               <table style="width: 100%">
                 <tr>
-                  <td @click="toggleSort(i)">
+                  <td
+                    class="nowrap"
+                    @click="toggleSort(i)"
+                  >
                     {{ getSortIcon(i) }} {{ name }}
                   </td>
                   <td
@@ -47,7 +50,7 @@
                         </v-btn>
                       </template>
                       <v-card>
-                        <div style="max-height: 500px; overflow-y: auto">
+                        <div class="filter-menu">
                           <v-list dense>
                             <v-list-item-group
                               v-model="filter_selections[i]"
@@ -126,6 +129,23 @@
 
 import { mdiFilter, mdiMagnify } from '@mdi/js';
 
+function defaultSort(a, b) {
+  // INFO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+  // ECMA specification: http://www.ecma-international.org/ecma-262/6.0/#sec-sortcompare
+
+  if(a === undefined && b === undefined) return 0;
+  if(a === undefined) return 1;
+  if(b === undefined) return -1;
+
+  const aString = a.toString();
+  const bString = b.toString();
+
+  if(aString < bString) return -1;
+  if(aString > bString) return 1;
+
+  return 0;
+}
+
 export default {
   name: 'DataTable',
 
@@ -161,7 +181,7 @@ export default {
         const a = item_a[this.sort_col][0];
         const b = item_b[this.sort_col][0];
 
-        let cmp = this.getSortFuction(this.sort_col)(a, b);
+        let cmp = this.getSortFunction(this.sort_col)(a, b);
         if(!this.sort_dir) cmp *= -1;
         return cmp;
       });
@@ -214,7 +234,7 @@ export default {
         });
       });
 
-      filterLists.forEach((list, i_col) => list.sort(this.getSortFuction(i_col)));
+      filterLists.forEach((list, i_col) => list.sort(this.getFilterListSortFunction(i_col)));
       return filterLists;
     },
     // Selected filters for each column
@@ -264,26 +284,9 @@ export default {
   },
 
   methods: {
-    getSortFuction(i_col) {
+    getSortFunction(i_col) {
       const field = this.fields[Object.keys(this.fields)[i_col]];
-      if(!('methods' in field) || !('sortFunction' in field.methods)) {
-        return (a, b) => {
-          // INFO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-          // ECMA specification: http://www.ecma-international.org/ecma-262/6.0/#sec-sortcompare
-
-          if(a === undefined && b === undefined) return 0;
-          if(a === undefined) return 1;
-          if(b === undefined) return -1;
-
-          const aString = a.toString();
-          const bString = b.toString();
-
-          if(aString < bString) return -1;
-          if(aString > bString) return 1;
-
-          return 0;
-        };
-      }
+      if(!('methods' in field) || !('sortFunction' in field.methods)) return defaultSort;
       return field.methods.sortFunction;
     },
     getSortIcon(i_col) {
@@ -310,6 +313,11 @@ export default {
       if(this.isFilterActive(i_col)) return 'primary';
       return hover ? '' : 'transparent';
     },
+    getFilterListSortFunction(i_col) {
+      const field = this.fields[Object.keys(this.fields)[i_col]];
+      if(!('methods' in field) || !('filterListSortFunction' in field.methods)) return defaultSort;
+      return field.methods.filterListSortFunction;
+    },
     // Remove the filter from a certain column
     clearFilter(i_col) {
       this.$set(this.filter_selections, i_col, []);
@@ -331,5 +339,14 @@ tr > td:not(.v-data-table__mobile-row),
 .theme--dark.v-data-table > .v-data-table__wrapper > table > tbody >
 tr > th:not(.v-data-table__mobile-row) {
   border-bottom: thin solid rgba(255, 255, 255, 0.12);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.filter-menu {
+  max-height: 500px;
+  overflow-y: auto;
 }
 </style>
