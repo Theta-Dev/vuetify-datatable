@@ -22,67 +22,74 @@
             :key="name"
           >
             <v-hover v-slot="{ hover }">
-              <v-row no-gutters align="center">
-                <v-col>
-                  {{ name }}
-                </v-col>
-                <v-col
-                  v-if="isFilterAvailable(i)"
-                  class="text-right"
-                >
-                  <v-menu
-                    v-model="filter_menus[i]"
-                    offset-y
-                    :close-on-content-click="false"
+              <table style="width: 100%">
+                <tr>
+                  <td>
+                    {{ name }}
+                  </td>
+                  <td
+                    v-if="isFilterAvailable(i)"
+                    class="text-right"
                   >
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn
-                        icon
-                        :color="getFilterButtonColor(i, hover || filter_menus[i])"
-                        v-on="on"
-                        v-bind="attrs"
-                      >
-                        <v-icon>mdi-filter</v-icon>
-                      </v-btn>
-                    </template>
-                    <v-list dense>
-                      <v-list-item-group
-                        v-model="filter_selections[i]"
-                        multiple
-                      >
-                        <v-list-item
-                          v-for="item in filterLists[i]"
-                          :key="item"
+                    <v-menu
+                      v-model="filter_menus[i]"
+                      offset-y
+                      :close-on-content-click="false"
+                    >
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn
+                          icon
+                          :color="getFilterButtonColor(i, hover || filter_menus[i])"
+                          v-on="on"
+                          v-bind="attrs"
                         >
-                          <template v-slot:default="{ active }">
-                            <v-list-item-content>
-                              <v-list-item-title>{{ item }}</v-list-item-title>
-                            </v-list-item-content>
+                          <v-icon>{{ icons.filter }}</v-icon>
+                        </v-btn>
+                      </template>
+                      <v-card>
+                        <div style="max-height: 500px; overflow-y: auto">
+                          <v-list dense>
+                            <v-list-item-group
+                              v-model="filter_selections[i]"
+                              multiple
+                            >
+                              <v-list-item
+                                v-for="item in filterLists[i]"
+                                :key="item"
+                              >
+                                <template v-slot:default="{ active }">
+                                  <v-list-item-content>
+                                    <v-list-item-title>{{ item }}</v-list-item-title>
+                                  </v-list-item-content>
 
-                            <v-list-item-action>
-                              <v-checkbox
-                                :input-value="active"
-                                color="primary"
-                              ></v-checkbox>
-                            </v-list-item-action>
-                          </template>
-                        </v-list-item>
-                      </v-list-item-group>
-                      <v-list-item-group
-                        v-show="isFilterActive(i)"
-                        mandatory
-                      >
-                        <v-list-item
-                          color="red"
-                          @click="clearFilter(i)"
-                        >
-                          <v-list-item-title>Clear filter</v-list-item-title>
-                        </v-list-item>
-                      </v-list-item-group>
-                    </v-list>
-                  </v-menu>
-                </v-col>
-              </v-row>
+                                  <v-list-item-action>
+                                    <v-checkbox
+                                      :input-value="active"
+                                      color="primary"
+                                    ></v-checkbox>
+                                  </v-list-item-action>
+                                </template>
+                              </v-list-item>
+                            </v-list-item-group>
+                          </v-list>
+                        </div>
+                        <div v-show="isFilterActive(i)">
+                          <v-list dense>
+                            <v-list-item-group mandatory>
+                              <v-list-item
+                                color="red"
+                                @click="clearFilter(i)"
+                              >
+                                <v-list-item-title>Filter löschen</v-list-item-title>
+                              </v-list-item>
+                            </v-list-item-group>
+                          </v-list>
+                        </div>
+                      </v-card>
+                    </v-menu>
+                  </td>
+                </tr>
+              </table>
             </v-hover>
           </th>
         </tr>
@@ -116,7 +123,8 @@
 </template>
 
 <script>
-import { mdiMagnify } from "@mdi/js";
+
+import { mdiFilter, mdiMagnify } from '@mdi/js';
 
 export default {
   name: 'DataTable',
@@ -130,6 +138,7 @@ export default {
   data: () => ({
     icons: {
       search: mdiMagnify,
+      filter: mdiFilter,
     },
     filter_menus: [],
     filter_selections: [],
