@@ -24,8 +24,8 @@
             <v-hover v-slot="{ hover }">
               <table style="width: 100%">
                 <tr>
-                  <td>
-                    {{ name }}
+                  <td @click="toggleSort(i)">
+                    {{ getSortIcon(i) }} {{ name }}
                   </td>
                   <td
                     v-if="isFilterAvailable(i)"
@@ -95,7 +95,7 @@
         </tr>
         </thead>
         <tbody>
-        <template v-for="(item, i_item) in data">
+        <template v-for="(item, i_item) in tdata">
           <tr
             v-for="(n, i_itrow) in numItemRows[i_item]"
             :key="i_item + '.' + i_itrow"
@@ -140,20 +140,40 @@ export default {
       search: mdiMagnify,
       filter: mdiFilter,
     },
+    // Togggle state of filter menus, [col_id] => state (bool)
     filter_menus: [],
+    // Filter selections, [col_id] => sel_id[]
     filter_selections: [],
+    // Search field input
     search: '',
+    // Sorting direction: true^=A-Z, false^=Z-a
+    sort_dir: false,
+    // Column to be sorted
+    sort_col: 4,
   }),
 
   computed: {
+    tdata() {
+      const tdata = [...this.data];
+      if(!(this.sort_col > -1)) return tdata;
+
+      return tdata.sort((item_a, item_b) => {
+        const a = item_a[this.sort_col][0];
+        const b = item_b[this.sort_col][0];
+
+        let cmp = this.getSortFuction(this.sort_col)(a, b);
+        if(!this.sort_dir) cmp *= -1;
+        return cmp;
+      });
+    },
     // The amount of rows occupied by each table item, [i_item] => num_rows
     numItemRows() {
-      return this.data.map((it) => it.map((fl) => fl.length).reduce((a, b) => Math.max(a, b)));
+      return this.tdata.map((it) => it.map((fl) => fl.length).reduce((a, b) => Math.max(a, b)));
     },
-    // Walk through the data object and obtain the searchable string for each value
+    // Walk through the tdata object and obtain the searchable string for each value
     // [i_item] => [i_col] => [i_entry] => searchable
     searchables() {
-      return this.data.map((item) => item.map((col, i_col) => col.reduce(
+      return this.tdata.map((item) => item.map((col, i_col) => col.reduce(
         (result, entry) => {
           const field = this.fields[Object.keys(this.fields)[i_col]];
 
@@ -164,10 +184,10 @@ export default {
         }, [],
       )));
     },
-    // Walk through the data object and obtain the filterable string for each value
+    // Walk through the tdata object and obtain the filterable string for each value
     // [i_item] => [i_col] => [i_entry] => filterable
     filterables() {
-      return this.data.map((item) => item.map((col, i_col) => col.reduce(
+      return this.tdata.map((item) => item.map((col, i_col) => col.reduce(
         (result, entry) => {
           const field = this.fields[Object.keys(this.fields)[i_col]];
 
@@ -207,9 +227,9 @@ export default {
     // Visibility state of each item (not sorted out by filter/search)
     // [i_itm] => visible (bool)
     visibleItems() {
-      return this.data.map((item, i_item) => {
+      return this.tdata.map((item, i_item) => {
         // Does search match
-        if(this.search) {
+        if(this.search && this.search.trim()) {
           // Split search input to get individual words, lowercase them
           // for casse insensitivity and filter out empty words
           const searchWords = this.search.toLowerCase().split(' ').filter(
@@ -246,8 +266,36 @@ export default {
   methods: {
     getSortFuction(i_col) {
       const field = this.fields[Object.keys(this.fields)[i_col]];
-      if(!('methods' in field) || !('sortFunction' in field.methods)) return undefined;
+      if(!('methods' in field) || !('sortFunction' in field.methods)) {
+        return (a, b) => {
+          // INFO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+          // ECMA specification: http://www.ecma-international.org/ecma-262/6.0/#sec-sortcompare
+
+          if(a === undefined && b === undefined) return 0;
+          if(a === undefined) return 1;
+          if(b === undefined) return -1;
+
+          const aString = a.toString();
+          const bString = b.toString();
+
+          if(aString < bString) return -1;
+          if(aString > bString) return 1;
+
+          return 0;
+        };
+      }
       return field.methods.sortFunction;
+    },
+    getSortIcon(i_col) {
+      if(i_col === this.sort_col) return this.sort_dir ? '▼' : '▲';
+      return '';
+    },
+    toggleSort(i_col) {
+      if(i_col === this.sort_col) this.sort_dir = !this.sort_dir;
+      else {
+        this.sort_col = i_col;
+        this.sort_dir = true;
+      }
     },
     // Can this column be filtered?
     isFilterAvailable(i_col) {
