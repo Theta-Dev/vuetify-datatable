@@ -80,7 +80,7 @@
                                 color="red"
                                 @click="clearFilter(i)"
                               >
-                                <v-list-item-title>Filter löschen</v-list-item-title>
+                                <v-list-item-title>Clear filter</v-list-item-title>
                               </v-list-item>
                             </v-list-item-group>
                           </v-list>
