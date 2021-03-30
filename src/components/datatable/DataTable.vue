@@ -13,112 +13,123 @@
         single-line
       />
     </v-card-text>
-    <v-simple-table>
+    <v-simple-table
+      class="datatable"
+      dense
+      fixed-header
+      height="calc(100vh - 220px)"
+    >
       <template v-slot:default>
         <thead>
-        <tr>
-          <th
-            v-for="(name, i) in Object.keys(fields)"
-            :key="name"
-          >
-            <v-hover v-slot="{ hover }">
-              <table style="width: 100%">
-                <tr>
-                  <td
-                    class="nowrap"
-                    @click="toggleSort(i)"
+          <!-- Headers -->
+          <tr>
+            <th
+              v-for="(field, i) in fields"
+              :key="field.name"
+              :class="field.headCls"
+            >
+              <v-menu
+                v-model="filter_menus[i]"
+                offset-y
+                :close-on-content-click="false"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <div
+                    :class="{'primary--text': isFilterActive(i)}"
+                    v-bind="attrs"
+                    v-on="on"
                   >
-                    {{ getSortIcon(i) }} {{ name }}
-                  </td>
-                  <td
-                    v-if="isFilterAvailable(i)"
-                    class="text-right"
-                  >
-                    <v-menu
-                      v-model="filter_menus[i]"
-                      offset-y
-                      :close-on-content-click="false"
-                    >
-                      <template v-slot:activator="{ on, attrs }">
+                    {{ field.name }} {{ getSortIcon(i) }}
+                  </div>
+                </template>
+                <v-card>
+                  <div class="filter-menu">
+                    <v-row>
+                      <v-col>
                         <v-btn
-                          icon
-                          :color="getFilterButtonColor(i, hover || filter_menus[i])"
-                          v-on="on"
-                          v-bind="attrs"
+                          block
+                          :color="isSortActive(i, true) ? 'primary' : ''"
+                          @click="setSort(i, true)"
                         >
-                          <v-icon>{{ icons.filter }}</v-icon>
+                          <v-icon>{{ icons.sortAZ }}</v-icon>
                         </v-btn>
-                      </template>
-                      <v-card>
-                        <div class="filter-menu">
-                          <v-list dense>
-                            <v-list-item-group
-                              v-model="filter_selections[i]"
-                              multiple
-                            >
-                              <v-list-item
-                                v-for="item in filterLists[i]"
-                                :key="item"
-                              >
-                                <template v-slot:default="{ active }">
-                                  <v-list-item-content>
-                                    <v-list-item-title>{{ item }}</v-list-item-title>
-                                  </v-list-item-content>
+                      </v-col>
+                      <v-col>
+                        <v-btn
+                          block
+                          :color="isSortActive(i, false) ? 'primary' : ''"
+                          @click="setSort(i, false)"
+                        >
+                          <v-icon>{{ icons.sortZA }}</v-icon>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
 
-                                  <v-list-item-action>
-                                    <v-checkbox
-                                      :input-value="active"
-                                      color="primary"
-                                    ></v-checkbox>
-                                  </v-list-item-action>
-                                </template>
-                              </v-list-item>
-                            </v-list-item-group>
-                          </v-list>
-                        </div>
-                        <div v-show="isFilterActive(i)">
-                          <v-list dense>
-                            <v-list-item-group mandatory>
-                              <v-list-item
-                                color="red"
-                                @click="clearFilter(i)"
-                              >
-                                <v-list-item-title>Clear filter</v-list-item-title>
-                              </v-list-item>
-                            </v-list-item-group>
-                          </v-list>
-                        </div>
-                      </v-card>
-                    </v-menu>
-                  </td>
-                </tr>
-              </table>
-            </v-hover>
-          </th>
-        </tr>
+                    <v-list dense>
+                      <v-list-item-group
+                        v-model="filter_selections[i]"
+                        multiple
+                      >
+                        <v-list-item
+                          v-for="item in filterLists[i]"
+                          :key="item"
+                        >
+                          <template v-slot:default="{ active }">
+                            <v-list-item-content>
+                              <v-list-item-title>{{ item }}</v-list-item-title>
+                            </v-list-item-content>
+
+                            <v-list-item-action>
+                              <v-checkbox
+                                :input-value="active"
+                                color="primary"
+                              />
+                            </v-list-item-action>
+                          </template>
+                        </v-list-item>
+                      </v-list-item-group>
+                    </v-list>
+                  </div>
+                  <div v-show="isFilterActive(i)">
+                    <v-list dense>
+                      <v-list-item-group mandatory>
+                        <v-list-item
+                          color="red"
+                          @click="clearFilter(i)"
+                        >
+                          <v-list-item-title>Clear filter</v-list-item-title>
+                        </v-list-item>
+                      </v-list-item-group>
+                    </v-list>
+                  </div>
+                </v-card>
+              </v-menu>
+            </th>
+          </tr>
         </thead>
         <tbody>
-        <template v-for="(item, i_item) in tdata">
-          <tr
-            v-for="(n, i_itrow) in numItemRows[i_item]"
-            :key="i_item + '.' + i_itrow"
-            v-show="visibleItems[i_item]"
-          >
-            <template
-              v-for="(col, i_col) in item"
+          <!-- Items -->
+          <template v-for="(item, i_item) in tdata">
+            <tr
+              v-for="(n, i_itrow) in numItemRows[i_item]"
+              v-show="visibleItems[i_item]"
+              :key="i_item + '.' + i_itrow"
+              :class="{'first-itrow': i_itrow===0}"
             >
-              <component
-                v-if="(numItemRows[i_item] - col.length) === 0 || i_itrow===0"
-                :key="i_col"
-                :is="fields[Object.keys(fields)[i_col]]"
-                :rspan="(numItemRows[i_item] - col.length) === 0 ? 1 : numItemRows[i_item]"
-                :val="col[i_itrow]"
-                :filter="filters"
-                :search="search"
-              />
-            </template>
-          </tr>
-        </template>
+              <template
+                v-for="(col, i_col) in item"
+              >
+                <component
+                  :is="fields[i_col].cell(col[i_itrow])"
+                  v-if="(numItemRows[i_item] - col.length) === 0 || i_itrow===0"
+                  :key="i_col"
+                  :rowspan="(numItemRows[i_item] - col.length) === 0 ? 1 : numItemRows[i_item]"
+                  :filter="filters"
+                  :search="search"
+                />
+              </template>
+            </tr>
+          </template>
         </tbody>
       </template>
     </v-simple-table>
@@ -127,38 +138,35 @@
 
 <script>
 
-import { mdiFilter, mdiMagnify } from '@mdi/js';
-
-function defaultSort(a, b) {
-  // INFO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-  // ECMA specification: http://www.ecma-international.org/ecma-262/6.0/#sec-sortcompare
-
-  if(a === undefined && b === undefined) return 0;
-  if(a === undefined) return 1;
-  if(b === undefined) return -1;
-
-  const aString = a.toString();
-  const bString = b.toString();
-
-  if(aString < bString) return -1;
-  if(aString > bString) return 1;
-
-  return 0;
-}
+import {
+  mdiFilter, mdiMagnify,
+  mdiSortAlphabeticalAscending, mdiSortAlphabeticalDescending,
+} from '@mdi/js';
 
 export default {
   name: 'DataTable',
 
   props: {
-    fields: Object,
-    data: Array,
-    title: String,
+    fields: {
+      type: Array,
+      required: true,
+    },
+    data: {
+      type: Array,
+      required: true,
+    },
+    title: {
+      type: String,
+      default: '',
+    },
   },
 
   data: () => ({
     icons: {
       search: mdiMagnify,
       filter: mdiFilter,
+      sortAZ: mdiSortAlphabeticalAscending,
+      sortZA: mdiSortAlphabeticalDescending,
     },
     // Togggle state of filter menus, [col_id] => state (bool)
     filter_menus: [],
@@ -166,6 +174,7 @@ export default {
     filter_selections: [],
     // Search field input
     search: '',
+    sort_selections: [],
     // Sorting direction: true^=A-Z, false^=Z-a
     sort_dir: true,
     // Column to be sorted
@@ -181,7 +190,7 @@ export default {
         const a = item_a[this.sort_col][0];
         const b = item_b[this.sort_col][0];
 
-        let cmp = this.getSortFunction(this.sort_col)(a, b);
+        let cmp = this.fields[this.sort_col].compare(a, b);
         if(!this.sort_dir) cmp *= -1;
         return cmp;
       });
@@ -195,10 +204,9 @@ export default {
     searchables() {
       return this.tdata.map((item) => item.map((col, i_col) => col.reduce(
         (result, entry) => {
-          const field = this.fields[Object.keys(this.fields)[i_col]];
+          const res = this.fields[i_col].getSearchable(entry);
+          if(res === null || res === undefined || res === '') return result;
 
-          if(!('methods' in field) || !('getSearchable' in field.methods)) return result;
-          const res = field.methods.getSearchable(entry);
           result.push(res);
           return result;
         }, [],
@@ -209,11 +217,15 @@ export default {
     filterables() {
       return this.tdata.map((item) => item.map((col, i_col) => col.reduce(
         (result, entry) => {
-          const field = this.fields[Object.keys(this.fields)[i_col]];
+          const res = this.fields[i_col].getFilterable(entry);
+          if(res === null || res === undefined || res === '') return result;
 
-          if(!('methods' in field) || !('getFilterable' in field.methods)) return result;
-          const res = field.methods.getFilterable(entry);
-          result.push(res);
+          if(Array.isArray(res)) {
+            res.forEach((ri) => {
+              if(ri !== null && ri !== undefined && ri !== '') result.push(ri);
+            });
+          }
+          else result.push(res);
           return result;
         }, [],
       )));
@@ -234,7 +246,9 @@ export default {
         });
       });
 
-      filterLists.forEach((list, i_col) => list.sort(this.getFilterListSortFunction(i_col)));
+      filterLists.forEach((list, i_col) => list.sort(
+        (a, b) => this.fields[i_col].compareFilterable(a, b),
+      ));
       return filterLists;
     },
     // Selected filters for each column
@@ -283,15 +297,16 @@ export default {
     },
   },
 
+  mounted() {
+  },
+
   methods: {
-    getSortFunction(i_col) {
-      const field = this.fields[Object.keys(this.fields)[i_col]];
-      if(!('methods' in field) || !('sortFunction' in field.methods)) return defaultSort;
-      return field.methods.sortFunction;
-    },
     getSortIcon(i_col) {
       if(i_col === this.sort_col) return this.sort_dir ? '▼' : '▲';
       return '';
+    },
+    isSortActive(i_col, dir) {
+      return i_col === this.sort_col && dir === this.sort_dir;
     },
     toggleSort(i_col) {
       if(i_col === this.sort_col) this.sort_dir = !this.sort_dir;
@@ -299,6 +314,16 @@ export default {
         this.sort_col = i_col;
         this.sort_dir = true;
       }
+    },
+    setSort(i_col, dir) {
+      if(this.isSortActive(i_col, dir)) {
+        this.sort_col = -1;
+      }
+      else {
+        this.sort_col = i_col;
+        this.sort_dir = dir;
+      }
+      this.filter_menus[i_col] = false;
     },
     // Can this column be filtered?
     isFilterAvailable(i_col) {
@@ -313,11 +338,6 @@ export default {
       if(this.isFilterActive(i_col)) return 'primary';
       return hover ? '' : 'transparent';
     },
-    getFilterListSortFunction(i_col) {
-      const field = this.fields[Object.keys(this.fields)[i_col]];
-      if(!('methods' in field) || !('filterListSortFunction' in field.methods)) return defaultSort;
-      return field.methods.filterListSortFunction;
-    },
     // Remove the filter from a certain column
     clearFilter(i_col) {
       this.$set(this.filter_selections, i_col, []);
@@ -326,27 +346,80 @@ export default {
 };
 </script>
 
-<style scoped>
-.theme--light.v-data-table > .v-data-table__wrapper > table > tbody >
+<style>
+.theme--light.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
 tr > td:not(.v-data-table__mobile-row),
-.theme--light.v-data-table > .v-data-table__wrapper > table > tbody >
+.theme--light.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
 tr:not(:last-child) > th:not(.v-data-table__mobile-row) {
   border-bottom: thin solid rgba(0, 0, 0, 0.12);
 }
 
-.theme--dark.v-data-table > .v-data-table__wrapper > table > tbody >
+.theme--dark.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
 tr > td:not(.v-data-table__mobile-row),
-.theme--dark.v-data-table > .v-data-table__wrapper > table > tbody >
+.theme--dark.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
 tr > th:not(.v-data-table__mobile-row) {
   border-bottom: thin solid rgba(255, 255, 255, 0.12);
 }
 
-.nowrap {
+.theme--light.v-data-table.datatable td,
+.theme--light.v-data-table.datatable th {
+  border-right: thin solid rgba(0, 0, 0, 0.12);
+}
+
+.theme--dark.v-data-table.datatable td:not(:last-child),
+.theme--dark.v-data-table.datatable th:not(:last-child) {
+  border-right: thin solid rgba(255, 255, 255, 0.12);
+}
+
+.theme--light.v-data-table.datatable tr.first-itrow > td {
+  border-top: thin solid rgba(0, 0, 0, 0.25);
+}
+
+.theme--dark.v-data-table.datatable tr.first-itrow > td {
+  border-top: thin solid rgba(255, 255, 255, 0.25);
+}
+
+.datatable > .v-data-table__wrapper > table > thead {
+  box-sizing: content-box;
+}
+
+.datatable > .v-data-table__wrapper > table > thead > tr > th {
   white-space: nowrap;
 }
 
+th.tinycol, td.tinycol {
+  min-width: 32px;
+  max-width: 32px;
+  overflow: hidden;
+}
+
+th.tinycol {
+  height: 48px !important;
+  padding: 4px !important
+}
+
+td.tinycol {
+  text-align: center !important;
+  padding: 4px 0 !important
+}
+
+th.tinycol.rotated > div {
+  transform: rotate(90deg);
+}
+
+.invisible-menu {
+  background: none;
+  border: none;
+  box-shadow: none !important;
+}
+
+.invisible-menu > * {
+  box-shadow: none !important;
+}
+
 .filter-menu {
-  max-height: 500px;
+  max-height: 50vh;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>

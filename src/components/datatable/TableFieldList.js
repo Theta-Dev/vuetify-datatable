@@ -1,0 +1,25 @@
+import TableField from './TableField';
+
+export default class TableFieldList extends TableField {
+  cell(val) {
+    const valstr = val.join(', ');
+
+    return {
+      render() {
+        return (
+          <td>
+            {valstr}
+          </td>
+        );
+      },
+    };
+  }
+
+  getSearchable(val) {
+    return val.join(' ').toLowerCase();
+  }
+
+  getFilterable(val) {
+    return val.map((vi) => vi.toString());
+  }
+}

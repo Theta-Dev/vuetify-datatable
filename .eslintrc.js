@@ -4,8 +4,8 @@ module.exports = {
     node: true,
   },
   extends: [
-    'plugin:vue/essential',
-    '@vue/airbnb',
+    'airbnb-base',
+    'plugin:vue/recommended',
   ],
   parserOptions: {
     parser: 'babel-eslint',
@@ -30,5 +30,9 @@ module.exports = {
     }],
     'brace-style': ['error', 'stroustrup'],
     'camelcase': "off",
+    'linebreak-style': 'off',
+    'class-methods-use-this': 'off',
+    'css-ruleorselectorexpected': 'off',
+    'import/no-unresolved': 'off',
   },
 };

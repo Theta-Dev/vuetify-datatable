@@ -10,40 +10,53 @@
 
 <script>
 import DataTable from '@/components/datatable/DataTable.vue';
+import mockData from '@/components/mock.json';
+import {
+  mdiAccountTie, mdiDialpad, mdiDomain, mdiLaptop, mdiMessage,
+} from '@mdi/js';
 
-import TableFieldText from '@/components/datatable/TableFieldText.vue';
-import TableFieldDummy from '@/components/datatable/TableFieldDummy.vue';
-import TableFieldIcon from '@/components/datatable/TableFieldIcon.vue';
-import TableFieldDate from '@/components/datatable/TableFieldDate.vue';
+import TableField from '@/components/datatable/TableField';
+import TableFieldTiny from '@/components/datatable/TableFieldTiny';
+import TableFieldDummy from '@/components/datatable/TableFieldDummy';
+import TableFieldIcon from '@/components/datatable/TableFieldIcon';
+import TableFieldDate from '@/components/datatable/TableFieldDate';
+import TableFieldList from '@/components/datatable/TableFieldList';
+
+const ICONS = {
+  0: ['Domain', mdiDomain, 'green'],
+  1: ['Message', mdiMessage, 'blue'],
+  2: ['Dial', mdiDialpad, 'purple'],
+  3: ['Computer', mdiLaptop, 'orange'],
+  4: ['Account', mdiAccountTie, 'red'],
+};
 
 export default {
   name: 'HelloWorld',
   components: { DataTable },
 
   data: () => ({
-    tableFields: {
-      Name: TableFieldText,
-      Task: TableFieldText,
-      Dummy: TableFieldDummy,
-      Icon: TableFieldIcon,
-      Date: TableFieldDate,
-    },
-    tableData: [
-      [
-        ['ThetaDev'],
-        ['Feature: User registration', 'Documentation'],
-        ['d1'],
-        [0],
-        ['15.02.2021', '01.03.2020'],
-      ],
-      [
-        ['Max'],
-        ['Fix: API error'],
-        ['d2'],
-        [1],
-        ['28.07.2021', '01.03.2021'],
-      ],
+    tableFields: [
+      new TableFieldTiny('#'),
+      new TableField('Name'),
+      new TableField('Task'),
+      new TableFieldDummy('Dummy'),
+      new TableFieldIcon('Icon', ICONS, true),
+      new TableFieldDate('Date'),
+      new TableFieldList('List'),
     ],
+
+    test: new TableField('HelloWorld'),
+    testin: '',
   }),
+
+  computed: {
+    tableData() {
+      return mockData.map((item, i) => {
+        const titem = [[i + 1]];
+        titem.push(...Object.values(item));
+        return titem;
+      });
+    },
+  },
 };
 </script>
