@@ -380,7 +380,7 @@ tr:hover:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper)
 }
 
 .theme--dark.v-data-table.datatable > .v-data-table__wrapper > table > tbody > tr.odd {
-  background: #616161 !important;
+  background: #353535 !important;
 }
 
 .datatable > .v-data-table__wrapper > table > thead {
