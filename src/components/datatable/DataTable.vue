@@ -293,8 +293,12 @@ export default {
         // Does filter match
         return this.filterables[i_item].every(
           (col, i_col) => {
-            if(!Array.isArray(col) || col.length === 0) return true;
+            // If the field is empty, treat as matched if there is no filter
+            if(!Array.isArray(col) || col.length === 0) {
+              return !Array.isArray(this.filters[i_col]) || this.filters[i_col].length === 0;
+            }
             return col.some((entry) => {
+              // Is filter disabled -> treat as matched
               if(!Array.isArray(this.filters[i_col]) || this.filters[i_col].length === 0) {
                 return true;
               }
