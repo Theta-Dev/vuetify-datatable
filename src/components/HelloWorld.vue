@@ -4,6 +4,7 @@
       title="DataTable Demo"
       :fields="tableFields"
       :data="tableData"
+      fixed-height="220"
     />
   </v-container>
 </template>
@@ -36,11 +37,11 @@ export default {
 
   data: () => ({
     tableFields: [
-      new TableFieldTiny('#'),
+      new TableFieldTiny('Nr.'),
       new TableField('Name'),
       new TableField('Task'),
       new TableFieldDummy('Dummy'),
-      new TableFieldIcon('Icon', ICONS, true),
+      new TableFieldIcon('Icon', ICONS, true, true),
       new TableFieldDate('Date'),
       new TableFieldList('List'),
     ],

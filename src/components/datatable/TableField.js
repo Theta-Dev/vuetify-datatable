@@ -2,6 +2,7 @@ export default class TableField {
   constructor(name) {
     this.name = name;
     this.headCls = [];
+    this.sortEnabled = true;
   }
 
   cell(val) {

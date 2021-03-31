@@ -1,10 +1,12 @@
 import { VIcon, VTooltip } from 'vuetify/lib';
 
-import TableFieldTiny from './TableFieldTiny';
+import TableField from './TableField';
 
-export default class TableFieldIcon extends TableFieldTiny {
-  constructor(name, icons, rotatedHeader) {
-    super(name, rotatedHeader);
+export default class TableFieldIcon extends TableField {
+  constructor(name, icons, tiny, rotatedHeader) {
+    super(name);
+    if(tiny) this.headCls.push('tinycol');
+    if(rotatedHeader) this.headCls.push('rotated');
     this.icons = icons;
   }
 

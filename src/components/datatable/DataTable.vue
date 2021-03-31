@@ -16,8 +16,8 @@
     <v-simple-table
       class="datatable"
       dense
-      fixed-header
-      height="calc(100vh - 220px)"
+      :fixed-header="parseInt(fixedHeight) > 0"
+      :height="`calc(100vh - ${fixedHeight}px)`"
     >
       <template v-slot:default>
         <thead>
@@ -32,6 +32,7 @@
                 v-model="filter_menus[i]"
                 offset-y
                 :close-on-content-click="false"
+                :disabled="!isFilterAvailable(i) && !isSortAvailable(i)"
               >
                 <template v-slot:activator="{ on, attrs }">
                   <div
@@ -44,7 +45,10 @@
                 </template>
                 <v-card>
                   <div class="filter-menu">
-                    <v-row>
+                    <v-row
+                      v-if="isSortAvailable(i)"
+                      class="ma-0"
+                    >
                       <v-col>
                         <v-btn
                           block
@@ -65,7 +69,10 @@
                       </v-col>
                     </v-row>
 
-                    <v-list dense>
+                    <v-list
+                      v-if="isFilterAvailable(i)"
+                      dense
+                    >
                       <v-list-item-group
                         v-model="filter_selections[i]"
                         multiple
@@ -114,7 +121,7 @@
               v-for="(n, i_itrow) in numItemRows[i_item]"
               v-show="visibleItems[i_item]"
               :key="i_item + '.' + i_itrow"
-              :class="{'first-itrow': i_itrow===0}"
+              :class="{'first-itrow': i_itrow===0, odd: i_item % 2}"
             >
               <template
                 v-for="(col, i_col) in item"
@@ -124,8 +131,6 @@
                   v-if="(numItemRows[i_item] - col.length) === 0 || i_itrow===0"
                   :key="i_col"
                   :rowspan="(numItemRows[i_item] - col.length) === 0 ? 1 : numItemRows[i_item]"
-                  :filter="filters"
-                  :search="search"
                 />
               </template>
             </tr>
@@ -156,6 +161,10 @@ export default {
       required: true,
     },
     title: {
+      type: String,
+      default: '',
+    },
+    fixedHeight: {
       type: String,
       default: '',
     },
@@ -301,19 +310,15 @@ export default {
   },
 
   methods: {
-    getSortIcon(i_col) {
-      if(i_col === this.sort_col) return this.sort_dir ? '▼' : '▲';
-      return '';
+    isSortAvailable(i_col) {
+      return this.fields[i_col].sortEnabled;
     },
     isSortActive(i_col, dir) {
       return i_col === this.sort_col && dir === this.sort_dir;
     },
-    toggleSort(i_col) {
-      if(i_col === this.sort_col) this.sort_dir = !this.sort_dir;
-      else {
-        this.sort_col = i_col;
-        this.sort_dir = true;
-      }
+    getSortIcon(i_col) {
+      if(i_col === this.sort_col) return this.sort_dir ? '▼' : '▲';
+      return '';
     },
     setSort(i_col, dir) {
       if(this.isSortActive(i_col, dir)) {
@@ -333,11 +338,6 @@ export default {
     isFilterActive(i_col) {
       return Array.isArray(this.filters[i_col]) && this.filters[i_col].length > 0;
     },
-    // Get the color of the filter button
-    getFilterButtonColor(i_col, hover) {
-      if(this.isFilterActive(i_col)) return 'primary';
-      return hover ? '' : 'transparent';
-    },
     // Remove the filter from a certain column
     clearFilter(i_col) {
       this.$set(this.filter_selections, i_col, []);
@@ -347,20 +347,7 @@ export default {
 </script>
 
 <style>
-.theme--light.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
-tr > td:not(.v-data-table__mobile-row),
-.theme--light.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
-tr:not(:last-child) > th:not(.v-data-table__mobile-row) {
-  border-bottom: thin solid rgba(0, 0, 0, 0.12);
-}
-
-.theme--dark.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
-tr > td:not(.v-data-table__mobile-row),
-.theme--dark.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
-tr > th:not(.v-data-table__mobile-row) {
-  border-bottom: thin solid rgba(255, 255, 255, 0.12);
-}
-
+/* Thin border between columns */
 .theme--light.v-data-table.datatable td,
 .theme--light.v-data-table.datatable th {
   border-right: thin solid rgba(0, 0, 0, 0.12);
@@ -371,12 +358,29 @@ tr > th:not(.v-data-table__mobile-row) {
   border-right: thin solid rgba(255, 255, 255, 0.12);
 }
 
+/* Thick border between items */
 .theme--light.v-data-table.datatable tr.first-itrow > td {
   border-top: thin solid rgba(0, 0, 0, 0.25);
 }
 
 .theme--dark.v-data-table.datatable tr.first-itrow > td {
   border-top: thin solid rgba(255, 255, 255, 0.25);
+}
+
+/* No color change on hover, instead color odd rows */
+.theme--light.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
+tr:hover:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper),
+.theme--dark.v-data-table.datatable > .v-data-table__wrapper > table > tbody >
+tr:hover:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper) {
+    background: unset;
+}
+
+.theme--light.v-data-table.datatable > .v-data-table__wrapper > table > tbody > tr.odd {
+  background: #eeeeee !important;
+}
+
+.theme--dark.v-data-table.datatable > .v-data-table__wrapper > table > tbody > tr.odd {
+  background: #616161 !important;
 }
 
 .datatable > .v-data-table__wrapper > table > thead {
@@ -388,19 +392,15 @@ tr > th:not(.v-data-table__mobile-row) {
 }
 
 th.tinycol, td.tinycol {
-  min-width: 32px;
-  max-width: 32px;
+  min-width: 24px;
+  max-width: 24px;
   overflow: hidden;
+  text-align: center !important;
+  padding: 0 !important
 }
 
 th.tinycol {
   height: 48px !important;
-  padding: 4px !important
-}
-
-td.tinycol {
-  text-align: center !important;
-  padding: 4px 0 !important
 }
 
 th.tinycol.rotated > div {

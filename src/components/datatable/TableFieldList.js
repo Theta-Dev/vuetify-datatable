@@ -1,6 +1,11 @@
 import TableField from './TableField';
 
 export default class TableFieldList extends TableField {
+  constructor(name) {
+    super(name);
+    this.sortEnabled = false;
+  }
+
   cell(val) {
     const valstr = val.join(', ');
 
