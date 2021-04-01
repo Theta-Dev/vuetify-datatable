@@ -116,10 +116,9 @@
         </thead>
         <tbody>
           <!-- Items -->
-          <template v-for="(item, i_item) in tdata">
+          <template v-for="(item, i_item) in tdata_filtered">
             <tr
               v-for="(n, i_itrow) in numItemRows[i_item]"
-              v-show="visibleItems[i_item]"
               :key="i_item + '.' + i_itrow"
               :class="{'first-itrow': i_itrow===0, odd: i_item % 2}"
             >
@@ -191,7 +190,9 @@ export default {
   }),
 
   computed: {
+    // Sorted table data
     tdata() {
+      console.log('COMP tdata');
       const tdata = [...this.data];
       if(!(this.sort_col > -1)) return tdata;
 
@@ -204,6 +205,47 @@ export default {
         return cmp;
       });
     },
+    // Searched+filtered table data
+    tdata_filtered() {
+      // Shortcut if there are no filters / search
+      const hasFilter = this.filters.length > 0;
+      const hasSearch = this.search && this.search.trim();
+      if(!hasFilter && !hasSearch) return this.tdata;
+
+      console.log('COMP tdata_filtered');
+      const searchWords = this.search.toLowerCase().split(' ').filter(
+        (word) => word.trim(),
+      );
+
+      return this.tdata.slice(0).filter(
+        (item, i_item) => {
+          if(hasSearch) {
+            if(!searchWords.some(
+              (word) => this.searchables[i_item].includes(word),
+            )) return false;
+          }
+
+          if(hasFilter) {
+            if(!this.filterables[i_item].every(
+              (col, i_col) => {
+                // If the field is empty, treat as matched if there is no filter
+                if(!Array.isArray(col) || col.length === 0) {
+                  return !Array.isArray(this.filters[i_col]) || this.filters[i_col].length === 0;
+                }
+                return col.some((entry) => {
+                  // Is filter disabled -> treat as matched
+                  if(!Array.isArray(this.filters[i_col]) || this.filters[i_col].length === 0) {
+                    return true;
+                  }
+                  return this.filters[i_col].includes(entry);
+                });
+              },
+            )) return false;
+          }
+          return true;
+        },
+      );
+    },
     // The amount of rows occupied by each table item, [i_item] => num_rows
     numItemRows() {
       return this.tdata.map((it) => it.map((fl) => fl.length).reduce((a, b) => Math.max(a, b)));
@@ -211,19 +253,22 @@ export default {
     // Walk through the tdata object and obtain the searchable string for each value
     // [i_item] => [i_col] => [i_entry] => searchable
     searchables() {
-      return this.tdata.map((item) => item.map((col, i_col) => col.reduce(
-        (result, entry) => {
-          const res = this.fields[i_col].getSearchable(entry);
-          if(res === null || res === undefined || res === '') return result;
-
-          result.push(res);
-          return result;
-        }, [],
-      )));
+      console.log('COMP searchables');
+      return this.tdata.map((item) => {
+        let searchable = '';
+        item.forEach(
+          (col, i_col) => col.forEach((entry) => {
+            const res = this.fields[i_col].getSearchable(entry);
+            if(res && res.toString() !== '') searchable += res.toString().toLowerCase();
+          }),
+        );
+        return searchable;
+      });
     },
     // Walk through the tdata object and obtain the filterable string for each value
     // [i_item] => [i_col] => [i_entry] => filterable
     filterables() {
+      console.log('COMP filterables');
       return this.tdata.map((item) => item.map((col, i_col) => col.reduce(
         (result, entry) => {
           const res = this.fields[i_col].getFilterable(entry);
@@ -242,6 +287,7 @@ export default {
     // Accumulate filterables for all columns to be shown in the filter menus
     // [i_col] => filterable[]
     filterLists() {
+      console.log('COMP filterLists');
       const filterLists = [];
 
       this.filterables.forEach((item) => {
@@ -263,50 +309,10 @@ export default {
     // Selected filters for each column
     // [i_col] => filterable[] (selected)
     filters() {
+      console.log('COMP filters');
       return this.filter_selections.map((selection, col) => selection.map(
         (i_sel) => this.filterLists[col][i_sel],
       ));
-    },
-    // Visibility state of each item (not sorted out by filter/search)
-    // [i_itm] => visible (bool)
-    visibleItems() {
-      return this.tdata.map((item, i_item) => {
-        // Does search match
-        if(this.search && this.search.trim()) {
-          // Split search input to get individual words, lowercase them
-          // for casse insensitivity and filter out empty words
-          const searchWords = this.search.toLowerCase().split(' ').filter(
-            (word) => word.trim(),
-          );
-          // Go through all search words
-          // Go through all fields of item
-          // At least one searchable has to match one search word
-          const searchMatched = searchWords.some((word) => this.searchables[i_item].some(
-            (col) => {
-              if(!Array.isArray(col) || col.length === 0) return false;
-              return col.some((entry) => entry.includes(word));
-            },
-          ));
-          if(!searchMatched) return false;
-        }
-
-        // Does filter match
-        return this.filterables[i_item].every(
-          (col, i_col) => {
-            // If the field is empty, treat as matched if there is no filter
-            if(!Array.isArray(col) || col.length === 0) {
-              return !Array.isArray(this.filters[i_col]) || this.filters[i_col].length === 0;
-            }
-            return col.some((entry) => {
-              // Is filter disabled -> treat as matched
-              if(!Array.isArray(this.filters[i_col]) || this.filters[i_col].length === 0) {
-                return true;
-              }
-              return this.filters[i_col].includes(entry);
-            });
-          },
-        );
-      });
     },
   },
 
@@ -345,6 +351,7 @@ export default {
     // Remove the filter from a certain column
     clearFilter(i_col) {
       this.$set(this.filter_selections, i_col, []);
+      this.filter_menus[i_col] = false;
     },
   },
 };
@@ -357,8 +364,8 @@ export default {
   border-right: thin solid rgba(0, 0, 0, 0.12);
 }
 
-.theme--dark.v-data-table.datatable td:not(:last-child),
-.theme--dark.v-data-table.datatable th:not(:last-child) {
+.theme--dark.v-data-table.datatable td,
+.theme--dark.v-data-table.datatable th {
   border-right: thin solid rgba(255, 255, 255, 0.12);
 }
 
@@ -396,15 +403,15 @@ tr:hover:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper)
 }
 
 th.tinycol, td.tinycol {
-  min-width: 24px;
-  max-width: 24px;
+  min-width: 32px;
+  max-width: 32px;
   overflow: hidden;
   text-align: center !important;
   padding: 0 !important
 }
 
 th.tinycol {
-  height: 48px !important;
+  height: 55px !important;
 }
 
 th.tinycol.rotated > div {
